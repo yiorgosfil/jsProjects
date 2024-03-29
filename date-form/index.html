@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE-edge" />
+  <meta name="vieport" content="width=device-width, initial-scale=1.0" />
+  <title>Date Formatter</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <main>
+    <div class="title-container">
+      <h1 class="title">Today's Date</h1>
+    </div>
+    <div class="divider"></div>
+
+    <div class="dropdown-container">
+      <select name="date-options" id="date-options">
+        <option value="dd-mm-yyyy">
+          Day, Month, Year
+        </option>
+        <option value="yyyy-mm-dd">
+          Year, Month, Day
+        </option>
+        <option value="mm-dd-yyyy-h-mm">
+          Month, Day, Year, Hours, Minutes
+        </option>
+      </select>
+      <div class="select-icon">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="25" height="35" viewBox="0 0 24 24">
+          <rect x="0" fill="none" width="24" height="24" />
+          <g>
+            <path d="M7 10l5 5 5-5" />
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <p id="current-date"></p>
+  </main>
+
+  <script src="./script.js"></script>
+</body>
+
+</html>
