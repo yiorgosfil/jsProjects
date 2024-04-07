@@ -172,7 +172,40 @@ function animate() {
       return
     }
 
+    const platformDetectionRules = [
+      player.position.x >= platform.position.x - player.width / 2,
+      player.position.x <= platform.position.x + platform.width - player.width / 3,
+      player.position.y + player.height >= platform.position.y,
+      player.position.y <= platform.position.y + platform.height
+    ]
+
+    if (platformDetectionRules.every((rule) => rule)) {
+      player.position.y = player.position.y + player.height
+      player.velocity.y = gravity
+    }
+  })
+
+  checkpoints.forEach((checkpoint, index, checkpoints) => {
+    const checkpointDetectionRules = [
+      player.position.x >= checkpoint.position.x,
+      player.position.y >= checkpoint.position.y,
+      player.position.y + player.height <= checkpoint.position.y + checkpoint.height,
+      isCheckpointCollisionDetectionActive,
+      player.position.x - player.width <= checkpoint.position.x - checkpoint.width +player.width * 0.9,
+      index === 0 || checkpoints[index - 1].claimed === true
+    ]
     
+    if (checkpointDetectionRules.every((rule) => rule)) {
+      checkpoint.claim()
+
+      if (index == checkpoints.length - 1) {
+        isCheckpointCollisionDetectionActive = false
+        showCheckpointsScreen('You reached the final checkpoint!')
+        movePlayer('ArrowRight', 0, false)
+      } else if ( player.position.x >= checkpoint.position.x && player.position.x <= checkpoint.position.x + 40) {
+        showCheckpointScreen('You reached a checkpoint!')
+      }
+    }
   })
 }
 
@@ -185,11 +218,56 @@ const keys = {
   }
 }
 
+function movePlayer(key, xVelocity, isPressed) {
+  if (!isCheckpointCollisionDetectionActive) {
+    player.velocity.x = 0
+    player.velocity.y = 0
+    return
+  }
+
+  switch (key) {
+    case 'ArrowLeft':
+      keys.leftKey.pressed = isPressed
+      if (xVelocity === 0) {
+        player.velocity.x = xVelocity
+      }
+      player.velocity.x -= xVelocity
+      break
+    case 'ArrowUp':
+    case ' ':
+    case 'Spacebar':
+      player.velocity.y -= 8
+      break
+    case 'ArrowRight':
+      keys.rightKey.pressed = isPressed
+      if (xVelocity === 0) {
+        player.velocity.x = xVelocity
+      }
+      player.velocity.x += xVelocity
+  }
+}
+
 function startGame() {
   canvas.style.display = 'block'
   startScreen.style.display = 'none'
-  player.draw()
+  animate()
 }
 
+function showCheckpointScreen(msg) {
+  checkpointScreen.style.display = 'block'
+  checkpointMessage.textContent = msg
+  if (isCheckpointCollisionDetectionActive) {
+    setTimeout(() => (checkpointScreen.style.dislpay = 'none'), 2000)
+  }
+}
+
+// Event Listeners
 startBtn.addEventListener('click', startGame)
 
+window.addEventListener('keydown', ({ key }) => {
+  movePlayer(key, 8, true)
+})
+
+window.addEventListener('keyup', ({ key }) => {
+  movePlayer(key, 0, false)
+}) 
