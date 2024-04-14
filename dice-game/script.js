@@ -103,6 +103,52 @@ function getHighestDuplicates(arr) {
   updateRadioOption(5, 0)
 }
 
+// 'Full house' is when 'Three of a kind' and a pair rolls
+// This gives 25points
+function detectFullHouse(arr) {
+  const counts = {}
+
+  for (let num of counts) {
+    counts[num] = counts[num] ? counts[num] + 1 : 1
+  }
+
+  // Object.values(counts) creates an array with the values of 'counts'
+  const hasThreeOfAKind = Object.values(counts).includes(3)
+  const hasPair = Object.values(counts).includes(2)
+
+  if (hasThreeOfAKind && hasPair) {
+    updateRadioOption(2, 25)
+  }
+
+  updateRadioOption(5, 0)
+}
+
+// Check for a straight 'Ex. 1234' that gives a score of 30points
+// A large straight 'Ex. 12345'gives a score of 40points
+function checkForStraights(arr) {
+  const sortedNumbersArr = arr.sort((a, b) => a - b)
+
+  // A Set on the array will give only the uniwue values in the array
+  // We convert the Set to arrray with the spread operator
+  const uniqueNumbersArr = [...new Set(sortedNumbersArr)]
+
+  const uniqueNumbersStr = uniqueNumbersArr.join('')
+
+  const smallStraightsArr = ['1234', '2345', '3456']
+  const largeStraightsArr = ['12345', '23456']
+
+  for (const straight of smallStraightsArr) {
+    if (uniqueNumbersStr.includes(straight)) {
+      updateRadioOption(3, 30)
+    }
+  }
+  if (largeStraightsArr.includes(uniqueNumbersStr)) {
+    updateRadioOption(4, 40)
+  }
+
+  updateRadioOption(5, 0)
+}
+
 // Before each roll, reset 'inputs' and 'spans' score values
 function resetRadioOption() {
   scoreInputs.forEach((input) => {
@@ -115,6 +161,27 @@ function resetRadioOption() {
   })
 }
 
+// Reset the game
+function resetGame() {
+  diceValuesArr = [0, 0, 0, 0, 0]
+  score = 0
+  totalScore = 0
+  round = 1
+  rolls = 0
+
+  listOfAllDice.forEach((dice, index) => {
+    dice.textContent = diceValuesArr[index]
+  })
+
+  totalScoreText.textContent = totalScore
+  scoreHistory.innerHTML = ''
+
+  currentRoundRollsText.textContent = rolls
+  currentRoundText.textContent = round
+
+  resetRadioOption()
+}
+
 // Roll the dice event listener
 rollDiceBtn.addEventListener('click', () => {
   if (rolls === 3) {
@@ -123,8 +190,11 @@ rollDiceBtn.addEventListener('click', () => {
     rolls++
     resetRadioOption()
     rollDice()
+    updateStats()
+    getHighestDuplicates(diceValuesArr)
+    detectFullHouse(diceValuesArr)
+    checkForStraights(diceValuesArr)
   }
-  updateStats()
 })
 
 // Toggle rules container visibility
@@ -162,6 +232,7 @@ keepScoreBtn.addEventListener('click', () => {
     if (round > 6) {
       setTimeout(() => {
         alert(`Game Over! Your total score is ${totalScore}`)
+        resetGame()
       }, 500)
     }
   } else {
