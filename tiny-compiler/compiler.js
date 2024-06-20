@@ -1,12 +1,5 @@
 'use strict'
 
-var visitor = {
-  NumberLiteral: {
-    enter(node, parent) {},
-    exit(node, parent) {},
-  }
-};
-
 /**
 Lexical analysis with the tokenizer (/^▽^)/
 
@@ -234,3 +227,60 @@ function transformer(ast) {
 
   return newAst;
 }
+
+/**
+The code generator will recursively call itself to print each node in
+the tree into one giant string ヾ（〃＾∇＾）ﾉ♪
+*/
+function codeGenerator(node) {
+  switch (node.type) {
+    case 'Program':
+      return node.body.map(codeGenerator)
+        .join('\n');
+    case 'ExpressionStatement':
+      return (
+        codeGenerator(node.expression) + ';'
+      );
+    case 'CallExpression':
+      return (
+        codeGenerator(node.callee) + 
+        '(' + 
+        node.arguments.map(codeGenerator)
+          .join(', ') + 
+        ')'
+      );
+    case 'Identifier':
+      return node.name;
+    case 'NumberLiteral':
+      return node.value;
+    case 'StringLiteral':
+      return '"' + node.value + '"';
+    default:
+      throw new TypeError(node.type);
+  }
+}
+
+/**
+Finally the compiler function will link together every part of the pipeline (۶* ‘ヮ’)۶”
+  1. input => tokenizer => tokens
+  2. tokens => parser => ast
+  3. ast => transformer => newAst
+  4. newAst => generator => output
+*/
+function compiler(input) {
+  let tokens = tokenizer(input);
+  let ast = parser(tokens);
+  let newAst = transformer(ast);
+  let output = codeGenerator(newAst);
+
+  return output;
+}
+
+module.exports = {
+  tokenizer,
+  parser,
+  traverser,
+  transformer,
+  codeGenerator,
+  compiler,
+};
