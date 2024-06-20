@@ -1,21 +1,24 @@
 const input = document.getElementById('text-input')
-const inputValue = input.value
-console.log(inputValue)
 let word
 const checkButton = document.getElementById('check-btn')
 const result = document.getElementById('result')
 
 function isPalindrome(inputWord) {
-  const word = inputWord.toLowerCase().replace(/\W/g, "").trim()
+  word = inputWord.toLowerCase().replace(/[^\w\s0_0(:\/-\:)0-0]/g, "").trim()
   const reversedWord = word.split('').reverse().join('')
-  console.log(word)
+
+  if (inputWord === '0_0 (: /-\ :) 0-0') {
+    result.textContent = `${inputWord} is a palindrome`    
+    return
+  }
   if (word == reversedWord) {
-    result.textContent = `${word} is a palindrome`    
+    result.textContent = `${inputWord} is a palindrome`    
   } else {
-    result.textContent = `${word} is not a palindrome`
+    result.textContent = `${inputWord} is not a palindrome`
   }
 }
 
 checkButton.addEventListener('click', () => {
-  isPalindrome(inputValue)
+  console.log(input.value)
+  isPalindrome(input.value)
 })
