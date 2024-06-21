@@ -26,19 +26,19 @@ demonstrate many of the major pieces of a modern compiler.
 Most compilers break down into three primary stages: Parsing, Transformation,
 and Code Generation
 
-1. *Parsing* is taking raw code and turning it into a more abstract
-   representation of the code.
+  1. *Parsing* is taking raw code and turning it into a more abstract
+     representation of the code.
 
-2. *Transformation* takes this abstract representation and manipulates to do
-   whatever the compiler wants it to.
+  2. *Transformation* takes this abstract representation and manipulates to do
+     whatever the compiler wants it to.
 
-3. *Code Generation* takes the transformed representation of the code and
-   turns it into new code.
+  3. *Code Generation* takes the transformed representation of the code and
+     turns it into new code.
 
 
-Parsing
-Parsing typically gets broken down into two phases: Lexical Analysis and
-Syntactic Analysis.
+## Parsing
+Parsing typically gets broken down into two phases: **Lexical Analysis** and
+**Syntactic Analysis**.
 
  1. *Lexical Analysis* takes the raw code and splits it apart into these things
     called tokens by a thing called a tokenizer (or lexer).
@@ -56,11 +56,11 @@ Syntactic Analysis.
     represents code in a way that is both easy to work with and tells us a lot
     of information.
 
- For the following syntax:
+For the following syntax:
 
    (add 2 (subtract 4 2))
 
- Tokens might look something like this:
+Tokens might look something like this:
 
    [
      { type: 'paren',  value: '('        },
@@ -74,32 +74,33 @@ Syntactic Analysis.
      { type: 'paren',  value: ')'        },
    ]
 
- And an Abstract Syntax Tree (AST) might look like this:
-
-   {
-     type: 'Program',
-     body: [{
+And an Abstract Syntax Tree (AST) might look like this:
+```js
+ {
+   type: 'Program',
+   body: [{
+     type: 'CallExpression',
+     name: 'add',
+     params: [{
+       type: 'NumberLiteral',
+       value: '2',
+     }, {
        type: 'CallExpression',
-       name: 'add',
+       name: 'subtract',
        params: [{
          type: 'NumberLiteral',
-         value: '2',
+         value: '4',
        }, {
-         type: 'CallExpression',
-         name: 'subtract',
-         params: [{
-           type: 'NumberLiteral',
-           value: '4',
-         }, {
-           type: 'NumberLiteral',
-           value: '2',
-         }]
+         type: 'NumberLiteral',
+         value: '2',
        }]
      }]
-   }
+   }]
+ }
+```
 
 
-Transformation
+## Transformation
 The next type of stage for a compiler is transformation. Again, this just
 takes the AST from the last step and makes changes to it. It can manipulate
 the AST in the same language or it can translate it into an entirely new
@@ -113,63 +114,65 @@ AST Node. These nodes have defined properties on them that describe one
 isolated part of the tree.
 
 We can have a node for a "NumberLiteral":
+```js
+ {
+   type: 'NumberLiteral',
+   value: '2',
+ }
+```
+Or maybe a node for a "CallExpression":
+```js
+ {
+   type: 'CallExpression',
+   name: 'subtract',
+   params: [...nested nodes go here...],
+ }
+```
 
-   {
-     type: 'NumberLiteral',
-     value: '2',
-   }
+When transforming the AST we can manipulate nodes by
+adding/removing/replacing properties, we can add new nodes, remove nodes, or
+we could leave the existing AST alone and create an entirely new one based
+on it.
 
- Or maybe a node for a "CallExpression":
+Since we’re targeting a new language, we’re going to focus on creating an
+entirely new AST that is specific to the target language.
 
-   {
-     type: 'CallExpression',
-     name: 'subtract',
-     params: [...nested nodes go here...],
-   }
-
- When transforming the AST we can manipulate nodes by
- adding/removing/replacing properties, we can add new nodes, remove nodes, or
- we could leave the existing AST alone and create an entirely new one based
- on it.
-
- Since we’re targeting a new language, we’re going to focus on creating an
- entirely new AST that is specific to the target language.
-
-Traversal
+### Traversal
 In order to navigate through all of these nodes, we need to be able to
 traverse through them. This traversal process goes to each node in the AST
 depth-first.
-
-   {
-     type: 'Program',
-     body: [{
+```js
+ {
+   type: 'Program',
+   body: [{
+     type: 'CallExpression',
+     name: 'add',
+     params: [{
+       type: 'NumberLiteral',
+       value: '2'
+     }, {
        type: 'CallExpression',
-       name: 'add',
+       name: 'subtract',
        params: [{
          type: 'NumberLiteral',
-         value: '2'
+         value: '4'
        }, {
-         type: 'CallExpression',
-         name: 'subtract',
-         params: [{
-           type: 'NumberLiteral',
-           value: '4'
-         }, {
-           type: 'NumberLiteral',
-           value: '2'
-         }]
+         type: 'NumberLiteral',
+         value: '2'
        }]
      }]
-   }
+   }]
+ }
+```
 
 So for the above AST we would go:
 
-  1. Program - Starting at the top level of the AST
-  2. CallExpression (add) - Moving to the first element of the Program's body
-  3. NumberLiteral (2) - Moving to the first element of CallExpression's params
-  4. CallExpression (subtract) - Moving to the second element of CallExpression's params
-  5. NumberLiteral (4) - Moving to the first element of CallExpression's params
-  6. NumberLiteral (2) - Moving to the second element of CallExpression's params
+ 1. Program - Starting at the top level of the AST
+ 2. CallExpression (add) - Moving to the first element of the Program's body
+ 3. NumberLiteral (2) - Moving to the first element of CallExpression's params
+ 4. CallExpression (subtract) - Moving to the second element of CallExpression's params
+ 5. NumberLiteral (4) - Moving to the first element of CallExpression's params
+ 6. NumberLiteral (2) - Moving to the second element of CallExpression's params
 
 If we were manipulating this AST directly, instead of creating a separate AST,
 we would likely introduce all sorts of abstractions here. But just visiting
@@ -178,28 +181,30 @@ each node in the tree is enough for what we're trying to do.
 The reason I use the word "visiting" is because there is this pattern of how
 to represent operations on elements of an object structure.
 
-Visitors
+### Visitors
 The basic idea here is that we are going to create a “visitor” object that
 has methods that will accept different node types.
+```js
+ var visitor = {
+   NumberLiteral() {},
+   CallExpression() {},
+ };
+```
 
-   var visitor = {
-     NumberLiteral() {},
-     CallExpression() {},
-   };
+When we traverse our AST, we will call the methods on this visitor whenever we
+"enter" a node of a matching type.
 
- When we traverse our AST, we will call the methods on this visitor whenever we
- "enter" a node of a matching type.
+In order to make this useful we will also pass the node and a reference to
+the parent node.
+```js
+ var visitor = {
+   NumberLiteral(node, parent) {},
+   CallExpression(node, parent) {},
+ };
+```
 
- In order to make this useful we will also pass the node and a reference to
- the parent node.
-
-   var visitor = {
-     NumberLiteral(node, parent) {},
-     CallExpression(node, parent) {},
-   };
-
- However, there also exists the possibility of calling things on "exit". Imagine
- our tree structure from before in list form:
+However, there also exists the possibility of calling things on "exit". Imagine
+our tree structure from before in list form:
 
    - Program
      - CallExpression
@@ -225,18 +230,17 @@ finish each branch of the tree we "exit" it. So going down the tree we
      <- CallExpression (exit)
    <- Program (exit)
 
- In order to support that, the final form of our visitor will look like this:
+In order to support that, the final form of our visitor will look like this:
+```js
+ var visitor = {
+   NumberLiteral: {
+     enter(node, parent) {},
+     exit(node, parent) {},
+   }
+ };
+```
 
-   var visitor = {
-     NumberLiteral: {
-       enter(node, parent) {},
-       exit(node, parent) {},
-     }
-   };
-
-
-
-Code Generation
+## Code Generation
 The final phase of a compiler is code generation. Sometimes compilers will do
 things that overlap with transformation, but for the most part code
 generation just means take our AST and string-ify code back out.
@@ -251,40 +255,35 @@ node types of the AST, and it will recursively call itself to print nested
 nodes until everything is printed into one long string of code.
 
 
- And that's it! That's all the different pieces of a compiler.
+And that's it! That's all the different pieces of a compiler.
 
- Now that isn’t to say every compiler looks exactly like I described here.
- Compilers serve many different purposes, and they might need more steps than
- I have detailed.
+Now that isn’t to say every compiler looks exactly like I described here.
+Compilers serve many different purposes, and they might need more steps than
+I have detailed.
 
- But now you should have a general high-level idea of what most compilers look
- like.
+But now you should have a general high-level idea of what most compilers look
+like.
 
- Now that I’ve explained all of this, you’re all good to go write your own
- compilers right?
+Now that I’ve explained all of this, you’re all good to go write your own
+compilers right?
 
- Just kidding, that's what I'm here to help with :P
+Just kidding, that's what I'm here to help with :P
 
- So let's begin...
+So let's begin...
 
 
-/**
- * ============================================================================
- // *                                   (/^▽^)/
- *                                THE TOKENIZER!
- * ============================================================================
- */
+============================================================================
+THE TOKENIZER (/^▽^)/
 
-/**
- * We're gonna start off with our first phase of parsing, lexical analysis, with
- * the tokenizer.
- *
- * We're just going to take our string of code and break it down into an array
- * of tokens.
- *
- *   (add 2 (subtract 4 2))   =>   [{ type: 'paren', value: '(' }, ...]
- */
+We're gonna start off with our first phase of parsing, lexical analysis, with
+the tokenizer.
 
+We're just going to take our string of code and break it down into an array
+of tokens.
+
+  (add 2 (subtract 4 2))   =>   [{ type: 'paren', value: '(' }, ...]
+
+```js
 // We start by accepting an input string of code, and we're gonna set up two
 // things...
 function tokenizer(input) {
@@ -445,21 +444,18 @@ function tokenizer(input) {
   // Then at the end of our `tokenizer` we simply return the tokens array.
   return tokens;
 }
+```
 
-/**
- * ============================================================================
- *                                 ヽ/❀o ل͜ o\ﾉ
- *                                THE PARSER!!!
- * ============================================================================
- */
 
-/**
- * For our parser we're going to take our array of tokens and turn it into an
- * AST.
- *
- *   [{ type: 'paren', value: '(' }, ...]   =>   { type: 'Program', body: [...] }
- */
+============================================================================
+THE PARSER ヽ/❀o ل͜ o\ﾉ
+                                
+For our parser we're going to take our array of tokens and turn it into an
+AST.
 
+  [{ type: 'paren', value: '(' }, ...]   =>   { type: 'Program', body: [...] }
+
+```js
 // Okay, so we define a `parser` function that accepts our array of `tokens`.
 function parser(tokens) {
 
@@ -604,49 +600,44 @@ function parser(tokens) {
   // At the end of our parser we'll return the AST.
   return ast;
 }
+```
 
-/**
- * ============================================================================
- *                                 ⌒(❀>◞౪◟<❀)⌒
- *                               THE TRAVERSER!!!
- * ============================================================================
- */
 
-/**
- * So now we have our AST, and we want to be able to visit different nodes with
- * a visitor. We need to be able to call the methods on the visitor whenever we
- * encounter a node with a matching type.
- *
- *   traverse(ast, {
- *     Program: {
- *       enter(node, parent) {
- *         // ...
- *       },
- *       exit(node, parent) {
- *         // ...
- *       },
- *     },
- *
- *     CallExpression: {
- *       enter(node, parent) {
- *         // ...
- *       },
- *       exit(node, parent) {
- *         // ...
- *       },
- *     },
- *
- *     NumberLiteral: {
- *       enter(node, parent) {
- *         // ...
- *       },
- *       exit(node, parent) {
- *         // ...
- *       },
- *     },
- *   });
- */
+============================================================================
+THE TRAVERSER ⌒(❀>◞౪◟<❀)⌒
+                               
+So now we have our AST, and we want to be able to visit different nodes with
+a visitor. We need to be able to call the methods on the visitor whenever we
+encounter a node with a matching type.
 
+  traverse(ast, {
+    Program: {
+      enter(node, parent) {
+        // ...
+      },
+      exit(node, parent) {
+        // ...
+      },
+    },
+     CallExpression: {
+      enter(node, parent) {
+        // ...
+      },
+      exit(node, parent) {
+        // ...
+      },
+    },
+     NumberLiteral: {
+      enter(node, parent) {
+        // ...
+      },
+      exit(node, parent) {
+        // ...
+      },
+    },
+  });
+
+```js
 // So we define a traverser function which accepts an AST and a
 // visitor. Inside we're going to define two functions...
 function traverser(ast, visitor) {
@@ -714,55 +705,52 @@ function traverser(ast, visitor) {
   // with no `parent` because the top level of the AST doesn't have a parent.
   traverseNode(ast, null);
 }
+```
 
-/**
- * ============================================================================
- *                                   ⁽(◍˃̵͈̑ᴗ˂̵͈̑)⁽
- *                              THE TRANSFORMER!!!
- * ============================================================================
- */
 
-/**
- * Next up, the transformer. Our transformer is going to take the AST that we
- * have built and pass it to our traverser function with a visitor and will
- * create a new ast.
- *
- * ----------------------------------------------------------------------------
- *   Original AST                     |   Transformed AST
- * ----------------------------------------------------------------------------
- *   {                                |   {
- *     type: 'Program',               |     type: 'Program',
- *     body: [{                       |     body: [{
- *       type: 'CallExpression',      |       type: 'ExpressionStatement',
- *       name: 'add',                 |       expression: {
- *       params: [{                   |         type: 'CallExpression',
- *         type: 'NumberLiteral',     |         callee: {
- *         value: '2'                 |           type: 'Identifier',
- *       }, {                         |           name: 'add'
- *         type: 'CallExpression',    |         },
- *         name: 'subtract',          |         arguments: [{
- *         params: [{                 |           type: 'NumberLiteral',
- *           type: 'NumberLiteral',   |           value: '2'
- *           value: '4'               |         }, {
- *         }, {                       |           type: 'CallExpression',
- *           type: 'NumberLiteral',   |           callee: {
- *           value: '2'               |             type: 'Identifier',
- *         }]                         |             name: 'subtract'
- *       }]                           |           },
- *     }]                             |           arguments: [{
- *   }                                |             type: 'NumberLiteral',
- *                                    |             value: '4'
- * ---------------------------------- |           }, {
- *                                    |             type: 'NumberLiteral',
- *                                    |             value: '2'
- *                                    |           }]
- *  (sorry the other one is longer.)  |         }
- *                                    |       }
- *                                    |     }]
- *                                    |   }
- * ----------------------------------------------------------------------------
- */
+============================================================================
+THE TRANSFORMER ⁽(◍˃̵͈̑ᴗ˂̵͈̑)⁽
 
+Next up, the transformer. Our transformer is going to take the AST that we
+have built and pass it to our traverser function with a visitor and will
+create a new ast.
+
+----------------------------------------------------------------------------
+  Original AST                     |   Transformed AST
+----------------------------------------------------------------------------
+  {                                |   {
+    type: 'Program',               |     type: 'Program',
+    body: [{                       |     body: [{
+      type: 'CallExpression',      |       type: 'ExpressionStatement',
+      name: 'add',                 |       expression: {
+      params: [{                   |         type: 'CallExpression',
+        type: 'NumberLiteral',     |         callee: {
+        value: '2'                 |           type: 'Identifier',
+      }, {                         |           name: 'add'
+        type: 'CallExpression',    |         },
+        name: 'subtract',          |         arguments: [{
+        params: [{                 |           type: 'NumberLiteral',
+          type: 'NumberLiteral',   |           value: '2'
+          value: '4'               |         }, {
+        }, {                       |           type: 'CallExpression',
+          type: 'NumberLiteral',   |           callee: {
+          value: '2'               |             type: 'Identifier',
+        }]                         |             name: 'subtract'
+      }]                           |           },
+    }]                             |           arguments: [{
+  }                                |             type: 'NumberLiteral',
+                                   |             value: '4'
+---------------------------------- |           }, {
+                                   |             type: 'NumberLiteral',
+                                   |             value: '2'
+                                   |           }]
+ (sorry the other one is longer.)  |         }
+                                   |       }
+                                   |     }]
+                                   |   }
+----------------------------------------------------------------------------
+
+```js
 // So we have our transformer function which will accept the lisp ast.
 function transformer(ast) {
 
@@ -852,21 +840,17 @@ function transformer(ast) {
   // just created.
   return newAst;
 }
+```
 
-/**
- * ============================================================================
- *                               ヾ（〃＾∇＾）ﾉ♪
- *                            THE CODE GENERATOR!!!!
- * ============================================================================
- */
+============================================================================
+THE CODE GENERATOR ヾ（〃＾∇＾）ﾉ♪
 
-/**
- * Now let's move onto our last phase: The Code Generator.
- *
- * Our code generator is going to recursively call itself to print each node in
- * the tree into one giant string.
- */
+Now let's move onto our last phase: The Code Generator.
 
+Our code generator is going to recursively call itself to print each node in
+the tree into one giant string.
+
+```js
 function codeGenerator(node) {
 
   // We'll break things down by the `type` of the `node`.
@@ -916,24 +900,20 @@ function codeGenerator(node) {
       throw new TypeError(node.type);
   }
 }
+```
 
-/**
- * ============================================================================
- *                                  (۶* ‘ヮ’)۶”
- *                         !!!!!!!!THE COMPILER!!!!!!!!
- * ============================================================================
- */
+============================================================================
+THE COMPILER (۶* ‘ヮ’)۶”
+                        
+FINALLY! We'll create our `compiler` function. Here we will link together
+every part of the pipeline.
 
-/**
- * FINALLY! We'll create our `compiler` function. Here we will link together
- * every part of the pipeline.
- *
- *   1. input  => tokenizer   => tokens
- *   2. tokens => parser      => ast
- *   3. ast    => transformer => newAst
- *   4. newAst => generator   => output
- */
+   1. input  => tokenizer   => tokens
+   2. tokens => parser      => ast
+   3. ast    => transformer => newAst
+   4. newAst => generator   => output
 
+```js
 function compiler(input) {
   let tokens = tokenizer(input);
   let ast    = parser(tokens);
@@ -943,14 +923,9 @@ function compiler(input) {
   // and simply return the output!
   return output;
 }
+```
 
-/**
- * ============================================================================
- *                                   (๑˃̵ᴗ˂̵)و
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!YOU MADE IT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- * ============================================================================
- */
-
+```js
 // Now I'm just exporting everything...
 module.exports = {
   tokenizer,
@@ -960,3 +935,4 @@ module.exports = {
   codeGenerator,
   compiler,
 };
+```
