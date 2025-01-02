@@ -85,19 +85,21 @@ const products = [
   },
 ]
 
-products.forEach(
-  ({ name, id, price, category }) => {
-    dessertCards.innerHTML += `
-      <div class="dessert-card">
-        <h2>${name}</h2>
-        <p class="dessert-price">$${price}</p>
-        <p class="product-category">Category: ${category}</p>
-        <button id="${id}" class=" btn add-to-cart-btn">
-          Add to cart
-        </button>
-      </div>
-    `
-  }
+products.forEach(({ name, id, price, category }) => {
+  dessertCards.innerHTML += `
+    <div class="dessert-card">
+      <h2>${name}</h2>
+      <p class="dessert-price">$${price}</p>
+      <p class="product-category">Category: ${category}</p>
+      <button 
+        id="${id}"
+        class="btn add-to-cart-btn"
+      >
+        Add to cart
+      </button>
+    </div>
+  `
+}
 )
 
 class ShoppingCart {
@@ -108,13 +110,12 @@ class ShoppingCart {
   }
 
   addItem(id, products) {
-    const product = products.find((item) => item.id === id)
+    const product = products.find(item => item.id === id)
     const { name, price } = product
     this.items.push(product)
 
-    // This object will be used to keep count of how many times each product has been added
     const totalCountPerProduct = {}
-    this.items.forEach((dessert) => {
+    this.items.forEach(dessert => {
       totalCountPerProduct[dessert.id] = (totalCountPerProduct[dessert.id] || 0) + 1
     })
 
@@ -130,20 +131,20 @@ class ShoppingCart {
         </p>
         <p>${price}</p>
       </div>
-    `
+      `
   }
 
   getCounts() {
-    return this.items.length
+    return this.items.lenght
   }
 
   clearCart() {
     if (!this.items.length) {
-      alert('Your shopping cart is already empty')
+      alert("Your shopping cart is empty")
       return
     }
 
-    const isCartCleared = confirm('Are you sure you want to clear all items from your shopping cart?')
+    const isCartCleared = confirm("Are you sure you want to clear all items from your shopping cart?")
 
     if (isCartCleared) {
       this.items = []
@@ -161,12 +162,13 @@ class ShoppingCart {
   }
 
   calculateTotal() {
-    const subTotal = this.items.reduce((total, item) => total + item.price, 0)
+    const subTotal = this.items.reduce((total, currentItem) => total + currentItem.price, 0)
     const tax = this.calculateTaxes(subTotal)
     this.total = subTotal + tax
     cartSubTotal.textContent = `$${subTotal.toFixed(2)}`
     cartTaxes.textContent = `$${tax.toFixed(2)}`
     cartTotal.textContent = `$${this.total.toFixed(2)}`
+
     return this.total
   }
 }
@@ -174,21 +176,18 @@ class ShoppingCart {
 const cart = new ShoppingCart()
 const addToCartBtns = document.getElementsByClassName('add-to-cart-btn')
 
-// Event Listeners //
-[addToCartBtns].forEach(
-  (btn) => {
-    btn.addEventListener('click', (event) => {
-      cart.addItem(Number(event.target.id), products)
-      totalNumberOfItems.textContent = cart.getCounts()
-      cart.calculateTotal()
-    })
-  }
-)
+[...addToCartBtns].forEach(btn => {
+  btn.addEventListener('click', e => {
+    cart.addItem(Number(e.target.id), products)
+    totalNumberOfItems.textContent = cart.getCounts()
+    cart.calculateTotal()
+  })
+})
 
 cartBtn.addEventListener('click', () => {
   isCartShowing = !isCartShowing
-  showHideCartSpan.textContent = isCartShowing ? 'Hide' : 'Show'
-  cartContainer.style.display = isCartShowing ? 'block' : 'none'
+  showHideCartSpan.textContent = isCartShowing ? "Hide" : "Show"
+  cartContainer.style.display = isCartShowing ? "block" : "none"
 })
 
 clearCartBtn.addEventListener('click', cart.clearCart.bind(cart))
